@@ -48,6 +48,25 @@ def analyse_stock(symbol):
         return
     if df.columns.nlevels > 1:
         df.columns = df.columns.droplevel(1)
+        
+    # Fill current-day NaN values with live price from fast_info if needed
+    if not df.empty and df.iloc[-1].isnull().any():
+        try:
+            ticker = yf.Ticker(symbol)
+            fi = ticker.fast_info
+            for col in df.columns:
+                col_lower = col.lower()
+                if 'close' in col_lower:
+                    df.loc[df.index[-1], col] = fi['lastPrice']
+                elif 'high' in col_lower:
+                    df.loc[df.index[-1], col] = fi['dayHigh'] if fi['dayHigh'] is not None else fi['lastPrice']
+                elif 'low' in col_lower:
+                    df.loc[df.index[-1], col] = fi['dayLow'] if fi['dayLow'] is not None else fi['lastPrice']
+                elif 'open' in col_lower:
+                    df.loc[df.index[-1], col] = fi['open'] if fi['open'] is not None else fi['lastPrice']
+        except Exception as live_err:
+            print(f"Could not fill live data for {symbol}: {live_err}")
+            
     df = df.dropna(subset=['Close'])
     # Calculate free technical indicators
     df.ta.rsi(append=True)
