@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>⚡ AI Agent Empire Companion PWA</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- PWA Web App Meta -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -282,12 +283,64 @@ th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: upp
 
 <div class="tabs">
   <button class="tab active" onclick="showTab('overview')">Overview</button>
+  <button class="tab" onclick="showTab('watchlist')">Watchlist</button>
   <button class="tab" onclick="showTab('queue')">Task Queue</button>
   <button class="tab" onclick="showTab('config')">API Keys</button>
   <button class="tab" onclick="showTab('offline')">Sync & Offline</button>
 </div>
 
 <div class="content">
+  <!-- WATCHLIST TAB -->
+  <div id="tab-watchlist" class="panel">
+    <h2>Watchlist & Indicators</h2>
+    <p class="sub">Manage watchlisted stock symbols and monitor technical signals</p>
+    
+    <div class="grid2">
+      <!-- Add Ticker Card -->
+      <div class="card">
+        <h3>Add Ticker to Watchlist</h3>
+        <div style="display:grid; grid-template-columns: 1fr auto; gap:12px; margin-top:14px; align-items: end;">
+          <div>
+            <label style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:600; display:block; margin-bottom:6px;">Yahoo Finance Ticker Symbol</label>
+            <input type="text" id="add-ticker-symbol" class="input" placeholder="e.g. RELIANCE.NS, TCS.NS, AAPL" />
+          </div>
+          <button class="btn" onclick="addWatchlistTicker()">Add Ticker</button>
+        </div>
+        <p style="font-size:12px; color:var(--muted); margin-top:10px;">Use <code>.NS</code> suffix for Indian stocks traded on NSE.</p>
+      </div>
+      
+      <!-- Scanner Status Card -->
+      <div class="card card-accent">
+        <h3>Scanner Engine Status</h3>
+        <p style="margin-top:10px;">Your autonomous agent scans technical indicators (RSI & MACD) on your watchlist and fires high-priority alerts to your mobile device via <code>ntfy.sh</code>.</p>
+        <button class="btn btn-small btn-outline" style="margin-top:14px;" onclick="quickQueue('stocks', 'scan_and_signal')">📈 Trigger Scan Now</button>
+      </div>
+    </div>
+    
+    <!-- Watchlist and Signals Table -->
+    <div class="card" style="margin-top:20px;">
+      <h3>Watchlist Technical Signals</h3>
+      <div style="overflow-x:auto; margin-top:14px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticker Symbol</th>
+              <th>Price</th>
+              <th>RSI (14)</th>
+              <th>MACD (12, 26, 9)</th>
+              <th>Signal Status</th>
+              <th>Last Checked</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="watchlist-table-body">
+            <tr><td colspan="7" style="text-align:center; color:var(--muted);">Initializing watchlist signals...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- OVERVIEW TAB -->
   <div id="tab-overview" class="panel active">
     <h2>Control Center</h2>
@@ -502,23 +555,20 @@ th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: upp
     
     <div class="card">
       <h3>Live Cloud Synchronizer Activity</h3>
-      <div class="console-box" id="console">
+        <div class="console-box" id="console">
         <div class="console-line"><span class="console-timestamp">[18:05:01]</span> <span class="console-info">Sync Agent started. Offline cache initialized.</span></div>
         <div class="console-line"><span class="console-timestamp">[18:05:03]</span> Network state check: <span class="console-info">ONLINE</span></div>
         <div class="console-line"><span class="console-timestamp">[18:05:04]</span> Local database sync check: <span class="console-info">SQLite database healthy (0 items in local buffer)</span></div>
       </div>
     </div>
-  </div>
-</div>
 
-<script>
+    <script>
 // Tab Navigation
 function showTab(tabId) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   
   document.getElementById('tab-' + tabId).classList.add('active');
-  // Find matching tab button
   const tabBtn = Array.from(document.querySelectorAll('.tab')).find(t => t.innerText.toLowerCase().includes(tabId));
   if (tabBtn) tabBtn.classList.add('active');
 }
@@ -531,42 +581,309 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// Mock SQLite Queue Data Store
-let mockTasks = [
-  { id: 1, agent: 'stocks', task: 'scan_and_signal', status: 'completed', date: '2026-06-16T18:05:00Z' },
-  { id: 2, agent: 'youtube', task: 'generate_and_upload_video', status: 'completed', date: '2026-06-16T17:30:00Z' },
-  { id: 3, agent: 'instagram', task: 'create_and_post', status: 'pending', date: '2026-06-16T23:30:00Z' }
-];
+// Supabase Instance
+let supabase = null;
 
-// Render Table
+function initSupabase() {
+  const url = localStorage.getItem('sync_url');
+  const key = localStorage.getItem('sync_key');
+  if (url && key) {
+    try {
+      supabase = window.supabase.createClient(url, key);
+      appendConsole("Supabase client initialized.", "info");
+      loadData();
+      // Poll every 10 seconds for real-time updates
+      setInterval(loadData, 10000);
+    } catch (e) {
+      appendConsole("Supabase initialization error: " + e.message, "warn");
+      loadMockData();
+    }
+  } else {
+    appendConsole("Supabase not configured. Using offline mock dashboard. Set credentials in 'Sync & Offline' tab.", "warn");
+    loadMockData();
+  }
+}
+
+// Data Lists
+let activeTasks = [];
+let watchlist = [];
+let signals = {};
+
+// Load Data
+function loadData() {
+  if (!supabase) return;
+  fetchTasks();
+  fetchWatchlistAndSignals();
+}
+
+function loadMockData() {
+  activeTasks = [
+    { id: 1, agent: 'stocks', task: 'scan_and_signal', status: 'completed', created_at: new Date(Date.now() - 3600000).toISOString() },
+    { id: 2, agent: 'youtube', task: 'generate_and_upload_video', status: 'completed', created_at: new Date(Date.now() - 7200000).toISOString() },
+    { id: 3, agent: 'instagram', task: 'create_and_post', status: 'pending', created_at: new Date().toISOString() }
+  ];
+  watchlist = ['HDFCBANK.NS', 'RELIANCE.NS', 'INFY.NS', 'TCS.NS', 'ICICIBANK.NS'];
+  signals = {
+    'ICICIBANK.NS': { price: 1327.60, rsi: 62.8, macd: 12.616, signal: '🟢 BUY', updated_at: new Date().toISOString() }
+  };
+  renderTasks();
+  renderWatchlist();
+}
+
+// Fetch Tasks from Supabase
+async function fetchTasks() {
+  if (!supabase) return;
+  try {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(20);
+      
+    if (error) throw error;
+    activeTasks = data || [];
+    renderTasks();
+  } catch (err) {
+    appendConsole("Failed to fetch cloud tasks: " + err.message, "warn");
+  }
+}
+
+// Render Tasks
 function renderTasks() {
   const tbody = document.getElementById('task-table-body');
+  if (!tbody) return;
   tbody.innerHTML = '';
   
-  mockTasks.slice().reverse().forEach(t => {
+  if (activeTasks.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--muted);">No tasks in the pipeline queue.</td></tr>';
+    return;
+  }
+  
+  activeTasks.forEach(t => {
     let statusColor = 'var(--muted)';
-    if (t.status === 'completed') statusColor = 'var(--teal)';
+    if (t.status === 'completed' || t.status === 'done') statusColor = 'var(--teal)';
     if (t.status === 'running') statusColor = 'var(--purple)';
-    if (t.status === 'pending') statusColor = 'var(--amber)';
+    if (t.status === 'pending' || t.status === 'pending_cloud') statusColor = 'var(--amber)';
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="font-weight:700;">#${t.id}</td>
+      <td style="font-weight:700;">#${t.id || 'N/A'}</td>
       <td style="font-weight:600; color:var(--purple);">${t.agent}</td>
       <td style="font-family:monospace; font-size:12px;">${t.task}</td>
       <td><span style="color:${statusColor}; font-weight:700; text-transform:uppercase; font-size:11px;">● ${t.status}</span></td>
-      <td style="font-size:12px; color:var(--muted);">${new Date(t.date).toLocaleTimeString()}</td>
+      <td style="font-size:12px; color:var(--muted);">${t.created_at ? new Date(t.created_at).toLocaleTimeString() : 'N/A'}</td>
       <td>
-        ${t.status === 'pending' ? `<button class="btn btn-outline btn-small" onclick="cancelTask(${t.id})">Cancel</button>` : `<span style="font-size:12px; color:var(--muted)">-</span>`}
+        ${(t.status === 'pending' || t.status === 'pending_cloud') ? `<button class="btn btn-outline btn-small" onclick="cancelTask(${t.id})">Cancel</button>` : `<span style="font-size:12px; color:var(--muted)">-</span>`}
       </td>
     `;
     tbody.appendChild(tr);
   });
   
-  document.getElementById('completed-count').innerText = mockTasks.filter(t => t.status === 'completed').length;
+  document.getElementById('completed-count').innerText = activeTasks.filter(t => t.status === 'completed' || t.status === 'done').length;
 }
 
-// Add console logs
+// Fetch Watchlist and Signals
+async function fetchWatchlistAndSignals() {
+  if (!supabase) return;
+  try {
+    const resWl = await supabase.from('watchlist').select('*');
+    if (resWl.error) throw resWl.error;
+    watchlist = (resWl.data || []).map(r => r.symbol);
+    
+    const resSig = await supabase.from('stock_signals').select('*');
+    if (resSig.error) throw resSig.error;
+    signals = {};
+    (resSig.data || []).forEach(r => {
+      signals[r.symbol] = r;
+    });
+    
+    renderWatchlist();
+  } catch (err) {
+    appendConsole("Failed to fetch watchlist/signals: " + err.message, "warn");
+  }
+}
+
+// Render Watchlist
+function renderWatchlist() {
+  const tbody = document.getElementById('watchlist-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  
+  if (watchlist.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--muted);">Watchlist is empty. Add a ticker above!</td></tr>';
+    return;
+  }
+  
+  watchlist.forEach(sym => {
+    const data = signals[sym] || {};
+    const price = data.price !== undefined && data.price !== null ? 'Rs.' + parseFloat(data.price).toFixed(2) : 'N/A';
+    const rsi = data.rsi !== undefined && data.rsi !== null ? parseFloat(data.rsi).toFixed(1) : 'N/A';
+    const macd = data.macd !== undefined && data.macd !== null ? parseFloat(data.macd).toFixed(3) : 'N/A';
+    const signalVal = data.signal || 'HOLD (No signal)';
+    const timeVal = data.updated_at ? new Date(data.updated_at).toLocaleTimeString() : 'N/A';
+    
+    let signalColor = 'var(--muted)';
+    if (signalVal.includes('BUY')) signalColor = 'var(--teal)';
+    if (signalVal.includes('SELL')) signalColor = 'var(--coral)';
+    
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-weight:700;">${sym}</td>
+      <td style="font-weight:600; color:var(--text);">${price}</td>
+      <td>${rsi}</td>
+      <td>${macd}</td>
+      <td><span style="color:${signalColor}; font-weight:700; text-transform:uppercase; font-size:11px;">${signalVal}</span></td>
+      <td style="font-size:12px; color:var(--muted);">${timeVal}</td>
+      <td>
+        <button class="btn btn-outline btn-small" style="border-color:rgba(255,94,126,0.3); color:var(--coral);" onclick="deleteWatchlistTicker('${sym}')">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Add Watchlist Ticker
+async function addWatchlistTicker() {
+  const inputEl = document.getElementById('add-ticker-symbol');
+  const sym = inputEl.value.trim().toUpperCase();
+  if (!sym) return;
+  
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('watchlist').upsert({ symbol: sym });
+      if (error) throw error;
+      appendConsole(`Added ticker to cloud watchlist: ${sym}`, 'info');
+      inputEl.value = '';
+      fetchWatchlistAndSignals();
+    } catch (err) {
+      appendConsole(`Failed to add ticker to cloud: ${err.message}`, 'warn');
+    }
+  } else {
+    // Local mock addition
+    if (!watchlist.includes(sym)) {
+      watchlist.push(sym);
+      renderWatchlist();
+      appendConsole(`Added ticker to local watchlist (mock): ${sym}`, 'info');
+    }
+    inputEl.value = '';
+  }
+}
+
+// Delete Watchlist Ticker
+async function deleteWatchlistTicker(sym) {
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('watchlist').delete().eq('symbol', sym);
+      if (error) throw error;
+      appendConsole(`Deleted ticker from cloud watchlist: ${sym}`, 'info');
+      fetchWatchlistAndSignals();
+    } catch (err) {
+      appendConsole(`Failed to delete ticker: ${err.message}`, 'warn');
+    }
+  } else {
+    watchlist = watchlist.filter(w => w !== sym);
+    renderWatchlist();
+    appendConsole(`Deleted ticker from local watchlist (mock): ${sym}`, 'info');
+  }
+}
+
+// Submit Task via form
+async function submitTask(e) {
+  e.preventDefault();
+  const agent = document.getElementById('form-agent').value;
+  const task = document.getElementById('form-task').value.trim();
+  if (!task) return;
+  
+  await queueTask(agent, task);
+  document.getElementById('form-task').value = '';
+}
+
+// Queue Task Helper
+async function queueTask(agent, task) {
+  if (supabase) {
+    try {
+      const payload = {
+        agent: agent,
+        task: task,
+        status: 'pending_cloud', // Triggers cloud execution or local sync agent
+        created_at: new Date().toISOString(),
+        device_id: 'local_device'
+      };
+      const { error } = await supabase.from('tasks').insert(payload);
+      if (error) throw error;
+      appendConsole(`Dispatched task to Supabase: ${agent} -> ${task}`, 'info');
+      fetchTasks();
+    } catch (err) {
+      appendConsole(`Failed to dispatch cloud task: ${err.message}`, 'warn');
+    }
+  } else {
+    // Local Mock Flow
+    const newTask = {
+      id: Math.floor(Math.random() * 1000) + 10,
+      agent: agent,
+      task: task,
+      status: 'pending',
+      created_at: new Date().toISOString()
+    };
+    activeTasks.push(newTask);
+    renderTasks();
+    appendConsole(`Queued task locally (mock): ${agent} -> ${task}`, 'info');
+    
+    // Mock progression
+    setTimeout(() => {
+      newTask.status = 'running';
+      renderTasks();
+      appendConsole(`Task status transition [running] (mock): ${agent} -> ${task}`, 'info');
+      setTimeout(() => {
+        newTask.status = 'completed';
+        renderTasks();
+        appendConsole(`Task completed successfully (mock): ${agent} -> ${task}`, 'info');
+      }, 4000);
+    }, 1500);
+  }
+}
+
+// Quick queue buttons
+async function quickQueue(agent, task) {
+  appendConsole(`Quick Dispatch: ${agent} -> ${task}`, 'info');
+  await queueTask(agent, task);
+}
+
+// Force local sync simulation
+function triggerLocalSync() {
+  appendConsole("Manual synchronization sequence initiated.", "info");
+  appendConsole("Testing connection to Supabase sync cluster...", "info");
+  if (supabase) {
+    loadData();
+    setTimeout(() => {
+      appendConsole("Sync successfully completed. Local cache matched with cloud database.", "info");
+    }, 1000);
+  } else {
+    setTimeout(() => {
+      appendConsole("Sync warning: PWA offline/not connected to Supabase.", "warn");
+    }, 1000);
+  }
+}
+
+// Cancel a task
+async function cancelTask(id) {
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('tasks').delete().eq('id', id);
+      if (error) throw error;
+      appendConsole(`Cancelled task ID #${id} in cloud.`, 'warn');
+      fetchTasks();
+    } catch (err) {
+      appendConsole(`Failed to cancel task: ${err.message}`, 'warn');
+    }
+  } else {
+    activeTasks = activeTasks.filter(t => t.id !== id);
+    renderTasks();
+    appendConsole(`Task ID #${id} cancelled (mock).`, 'warn');
+  }
+}
+
+// Console helper
 function appendConsole(message, type = 'info') {
   const consoleEl = document.getElementById('console');
   const now = new Date();
@@ -578,82 +895,6 @@ function appendConsole(message, type = 'info') {
   div.innerHTML = `<span class="console-timestamp">[${timeStr}]</span> <span class="${typeClass}">${message}</span>`;
   consoleEl.appendChild(div);
   consoleEl.scrollTop = consoleEl.scrollHeight;
-}
-
-// Queue task via forms
-function submitTask(e) {
-  e.preventDefault();
-  const agent = document.getElementById('form-agent').value;
-  const task = document.getElementById('form-task').value;
-  
-  const newTask = {
-    id: mockTasks.length + 1,
-    agent: agent,
-    task: task,
-    status: 'pending',
-    date: new Date().toISOString()
-  };
-  
-  mockTasks.push(newTask);
-  renderTasks();
-  appendConsole(`Task queued locally: ${agent} -> ${task}`, 'info');
-  document.getElementById('form-task').value = '';
-  
-  // Simulate dispatching
-  setTimeout(() => {
-    newTask.status = 'running';
-    renderTasks();
-    appendConsole(`Task status transition [running]: ${agent} -> ${task}`, 'info');
-    
-    setTimeout(() => {
-      newTask.status = 'completed';
-      renderTasks();
-      appendConsole(`Task completed successfully: ${agent} -> ${task}`, 'info');
-    }, 5000);
-  }, 2000);
-}
-
-// Cancel a task
-function cancelTask(id) {
-  mockTasks = mockTasks.filter(t => t.id !== id);
-  renderTasks();
-  appendConsole(`Task ID #${id} cancelled by user.`, 'warn');
-}
-
-// Quick queue buttons
-function quickQueue(agent, task) {
-  const newTask = {
-    id: mockTasks.length + 1,
-    agent: agent,
-    task: task,
-    status: 'pending',
-    date: new Date().toISOString()
-  };
-  
-  mockTasks.push(newTask);
-  renderTasks();
-  appendConsole(`Quick Task dispatched: ${agent} -> ${task}`, 'info');
-  
-  setTimeout(() => {
-    newTask.status = 'running';
-    renderTasks();
-    appendConsole(`Task status transition [running]: ${agent} -> ${task}`, 'info');
-    
-    setTimeout(() => {
-      newTask.status = 'completed';
-      renderTasks();
-      appendConsole(`Task completed successfully: ${agent} -> ${task}`, 'info');
-    }, 4000);
-  }, 1500);
-}
-
-// Force local sync simulation
-function triggerLocalSync() {
-  appendConsole("Manual synchronization sequence initiated.", "info");
-  appendConsole("Testing connection to Supabase sync cluster...", "info");
-  setTimeout(() => {
-    appendConsole("Sync successfully completed. Local cache matched with cloud database.", "info");
-  }, 1000);
 }
 
 // API Keys save & load
@@ -677,19 +918,15 @@ function clearKeys() {
   alert("Wallet data erased successfully.");
 }
 
-function loadKeys() {
-  document.getElementById('key-telegram').value = localStorage.getItem('key_telegram') || '';
-  document.getElementById('key-youtube').value = localStorage.getItem('key_youtube') || '';
-  document.getElementById('key-meta').value = localStorage.getItem('key_meta') || '';
-  document.getElementById('key-github').value = localStorage.getItem('key_github') || '';
-}
-
 // Supabase sync save & load
 function saveSyncSettings() {
-  localStorage.setItem('sync_url', document.getElementById('sync-supabase-url').value);
-  localStorage.setItem('sync_key', document.getElementById('sync-supabase-key').value);
+  const url = document.getElementById('sync-supabase-url').value.trim();
+  const key = document.getElementById('sync-supabase-key').value.trim();
+  localStorage.setItem('sync_url', url);
+  localStorage.setItem('sync_key', key);
   appendConsole("Sync connection initialized.", "info");
-  alert("Sync configurations saved.");
+  alert("Sync configurations saved. Initializing connection...");
+  initSupabase();
 }
 
 function loadSyncSettings() {
@@ -697,11 +934,18 @@ function loadSyncSettings() {
   document.getElementById('sync-supabase-key').value = localStorage.getItem('sync_key') || '';
 }
 
+function loadKeys() {
+  document.getElementById('key-telegram').value = localStorage.getItem('key_telegram') || '';
+  document.getElementById('key-youtube').value = localStorage.getItem('key_youtube') || '';
+  document.getElementById('key-meta').value = localStorage.getItem('key_meta') || '';
+  document.getElementById('key-github').value = localStorage.getItem('key_github') || '';
+}
+
 // Startup Initializations
 window.onload = () => {
-  renderTasks();
   loadKeys();
   loadSyncSettings();
+  initSupabase();
 }
 </script>
 </body>

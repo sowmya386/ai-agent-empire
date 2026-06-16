@@ -39,6 +39,25 @@ def init_db():
         conn.execute('ALTER TABLE tasks ADD COLUMN synced INTEGER DEFAULT 0')
     except sqlite3.OperationalError:
         pass # Already exists
+    
+    # Initialize watchlist and stock signals
+    conn.execute('''CREATE TABLE IF NOT EXISTS watchlist (
+        symbol TEXT PRIMARY KEY)''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS stock_signals (
+        symbol TEXT PRIMARY KEY,
+        price REAL,
+        rsi REAL,
+        macd REAL,
+        signal TEXT,
+        updated_at TEXT)''')
+    
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM watchlist")
+    if cursor.fetchone()[0] == 0:
+        default_watchlist = [('HDFCBANK.NS',), ('RELIANCE.NS',), ('INFY.NS',), ('TCS.NS',), ('ICICIBANK.NS',)]
+        cursor.executemany("INSERT OR IGNORE INTO watchlist (symbol) VALUES (?)", default_watchlist)
+        conn.commit()
+        
     conn.commit()
     return conn
 
@@ -103,6 +122,40 @@ def sync_to_cloud():
             # Mark task as pending locally on cloud
             supabase_client.table('tasks').update({"status": "pending"}).eq("id", cloud_id).execute()
         conn.commit()
+
+        # 3. Pull watchlist from Supabase to local SQLite
+        try:
+            res_wl = supabase_client.table('watchlist').select("*").execute()
+            if res_wl.data is not None:
+                cloud_symbols = [row['symbol'] for row in res_wl.data]
+                if cloud_symbols:
+                    # Sync cloud symbols to local
+                    placeholders = ','.join('?' for _ in cloud_symbols)
+                    cursor.execute(f"DELETE FROM watchlist WHERE symbol NOT IN ({placeholders})", cloud_symbols)
+                    for sym in cloud_symbols:
+                        cursor.execute("INSERT OR IGNORE INTO watchlist (symbol) VALUES (?)", (sym,))
+                    conn.commit()
+                    print("Synced watchlist from cloud.")
+        except Exception as e:
+            print(f"Watchlist cloud sync skipped/failed: {e}")
+
+        # 4. Push local stock signals to Supabase
+        try:
+            local_signals = cursor.execute("SELECT symbol, price, rsi, macd, signal, updated_at FROM stock_signals").fetchall()
+            for sig in local_signals:
+                sym, price, rsi, macd, signal_val, updated_at = sig
+                payload = {
+                    "symbol": sym,
+                    "price": price,
+                    "rsi": rsi,
+                    "macd": macd,
+                    "signal": signal_val,
+                    "updated_at": updated_at
+                }
+                supabase_client.table('stock_signals').upsert(payload).execute()
+            print("Synced stock signals to cloud.")
+        except Exception as e:
+            print(f"Stock signals cloud sync skipped/failed: {e}")
 
     except Exception as e:
         print(f"Sync failed: {e}")
