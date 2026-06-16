@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+agent_empire.db
+audio.mp3
+video.mp4
+post.jpg
+chrome-profile/
+sample_website.html
+venv/
+.env
