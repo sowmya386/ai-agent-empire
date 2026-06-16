@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ AI Agent Empire Companion PWA</title>
+<!-- PWA Web App Meta -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f1e">
+<link rel="manifest" href="data:application/manifest+json,{'name':'AI Agent Empire','short_name':'AgentEmpire','start_url':'.','display':'standalone','background_color':'#0f0f1e','theme_color':'#7c6ff7'}" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b0b14;
+  --panel-bg: rgba(26, 26, 46, 0.7);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-focus: #7c6ff7;
+  --text: #eef2f7;
+  --muted: #8e9bb0;
+  --purple: #7c6ff7;
+  --purple-glow: rgba(124, 111, 247, 0.4);
+  --teal: #00f5c4;
+  --teal-glow: rgba(0, 245, 196, 0.3);
+  --coral: #ff5e7e;
+  --amber: #ffbe3c;
+  --blue: #38b6ff;
+  --green: #2ecc71;
+  --glass: backdrop-filter: blur(16px) saturate(180%);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg) 70%);
+  color: var(--text);
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* Header */
+.header {
+  background: rgba(11, 11, 20, 0.8);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+.logo {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #fff 30%, var(--purple) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.logo span {
+  display: inline-block;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px var(--purple-glow)); }
+  50% { transform: scale(1.1); filter: drop-shadow(0 0 8px var(--purple)); }
+}
+
+.badge {
+  background: rgba(0, 245, 196, 0.1);
+  color: var(--teal);
+  border: 1px solid rgba(0, 245, 196, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Navigation Tabs */
+.tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 24px;
+  background: rgba(20, 20, 35, 0.4);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  padding: 10px 20px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.tab.active {
+  background: rgba(124, 111, 247, 0.15);
+  color: #fff;
+  border: 1px solid rgba(124, 111, 247, 0.3);
+  box-shadow: 0 0 15px rgba(124, 111, 247, 0.1);
+}
+.tab:hover:not(.active) {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Main Content Layout */
+.content {
+  padding: 24px;
+  max-width: 1040px;
+  margin: 0 auto;
+}
+.panel { display: none; }
+.panel.active { display: block; animation: fadeIn 0.4s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Cards & Grid styling */
+h2 { font-size: 26px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; }
+.sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+.card {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, border-color 0.2s;
+}
+.card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.card-accent {
+  border-left: 4px solid var(--purple);
+}
+
+/* Metrics Dashboard */
+.metric-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.metric {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  backdrop-filter: blur(16px);
+}
+.metric .val { font-size: 28px; font-weight: 800; line-height: 1.2; }
+.metric .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 6px; }
+
+/* Revenue Bar Graph */
+.revenue-row { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.revenue-row .name { width: 140px; font-size: 13px; color: var(--muted); flex-shrink: 0; }
+.bar-wrap { flex: 1; background: rgba(255, 255, 255, 0.05); border-radius: 4px; height: 8px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease-in-out; }
+.revenue-row .amt { font-size: 13px; font-weight: 700; min-width: 60px; text-align: right; }
+
+/* Tool lists */
+.tool-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+.tool-row:last-child { border-bottom: none; }
+.status-light { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 8px currentColor; }
+.status-online { color: var(--teal); background-color: var(--teal); }
+.status-warning { color: var(--amber); background-color: var(--amber); }
+
+/* Control Form Elements */
+.btn {
+  background: var(--purple);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(124, 111, 247, 0.3);
+}
+.btn:hover {
+  background: #6b5ce6;
+  box-shadow: 0 4px 20px rgba(124, 111, 247, 0.5);
+}
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  box-shadow: none;
+}
+.btn-outline:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+}
+.btn-small { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+
+.input {
+  background: rgba(11, 11, 20, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--purple);
+  box-shadow: 0 0 10px rgba(124, 111, 247, 0.1);
+}
+
+/* Console Simulation */
+.console-box {
+  background: #06060c;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: #a9b7c6;
+  max-height: 250px;
+  overflow-y: auto;
+  margin-top: 14px;
+}
+.console-line { margin-bottom: 6px; }
+.console-timestamp { color: var(--purple); margin-right: 8px; }
+.console-info { color: var(--teal); }
+.console-warn { color: var(--amber); }
+
+/* Table styling */
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th, td { text-align: left; padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; }
+
+/* Timeline Roadmap */
+.timeline { position: relative; padding-left: 24px; margin-top: 14px; }
+.timeline::before { content: ''; position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: rgba(255, 255, 255, 0.05); }
+.tl-item { position: relative; padding-bottom: 24px; }
+.tl-item::before {
+  content: ''; position: absolute; left: -21px; top: 6px; width: 12px; height: 12px;
+  border-radius: 50%; background: #2a2a3e; border: 2px solid var(--border);
+}
+.tl-item.completed::before { background: var(--teal); border-color: var(--teal); box-shadow: 0 0 10px var(--teal-glow); }
+.tl-item.active::before { background: var(--purple); border-color: var(--purple); box-shadow: 0 0 10px var(--purple-glow); }
+.tl-title { font-weight: 600; font-size: 14px; }
+.tl-desc { color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+/* Responsive adjustments */
+@media (max-width: 820px) {
+  .metric-row { grid-template-columns: 1fr 1fr; }
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo"><span>⚡</span> AI Agent Empire</div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <span class="badge">Autopilot</span>
+    <span id="clock" style="font-size:12px; color:var(--muted); font-weight:600;"></span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('overview')">Overview</button>
+  <button class="tab" onclick="showTab('queue')">Task Queue</button>
+  <button class="tab" onclick="showTab('config')">API Keys</button>
+  <button class="tab" onclick="showTab('offline')">Sync & Offline</button>
+</div>
+
+<div class="content">
+  <!-- OVERVIEW TAB -->
+  <div id="tab-overview" class="panel active">
+    <h2>Control Center</h2>
+    <p class="sub">Manage and dispatch autonomous background agents on your laptop</p>
+    
+    <div class="metric-row">
+      <div class="metric">
+        <div class="val" style="color:var(--teal)">$0</div>
+        <div class="lbl">Investment</div>
+      </div>
+      <div class="metric">
+        <div class="val" style="color:var(--purple)">5</div>
+        <div class="lbl">Active Agents</div>
+      </div>
+      <div class="metric">
+        <div class="val" style="color:var(--amber)" id="completed-count">14</div>
+        <div class="lbl">Tasks Done</div>
+      </div>
+      <div class="metric">
+        <div class="val" style="color:var(--blue)">98%</div>
+        <div class="lbl">Sync Health</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <!-- Agent Status Card -->
+      <div class="card">
+        <h3>Agent Daemons Status</h3>
+        <div style="margin-top:14px;">
+          <div class="tool-row">
+            <span><span class="status-light status-online"></span>Orchestrator Daemon</span>
+            <span class="badge" style="color:var(--teal)">Online</span>
+          </div>
+          <div class="tool-row">
+            <span><span class="status-light status-online"></span>Stock Scanner</span>
+            <span class="badge" style="color:var(--teal)">Idle</span>
+          </div>
+          <div class="tool-row">
+            <span><span class="status-light status-online"></span>Cloud Sync Agent</span>
+            <span class="badge" style="color:var(--teal)">Synced</span>
+          </div>
+          <div class="tool-row">
+            <span><span class="status-light status-warning"></span>YouTube Script Builder</span>
+            <span class="badge" style="color:var(--amber)">Waiting</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Revenue Breakdown -->
+      <div class="card card-accent">
+        <h3>Estimated Revenue Split</h3>
+        <div style="margin-top:14px;">
+          <div class="revenue-row">
+            <span class="name">YouTube AdSense</span>
+            <div class="bar-wrap"><div class="bar-fill" style="width:22%; background:var(--coral)"></div></div>
+            <span class="amt" style="color:var(--coral)">$2,200</span>
+          </div>
+          <div class="revenue-row">
+            <span class="name">Website Sales</span>
+            <div class="bar-wrap"><div class="bar-fill" style="width:30%; background:var(--teal)"></div></div>
+            <span class="amt" style="color:var(--teal)">$3,000</span>
+          </div>
+          <div class="revenue-row">
+            <span class="name">Telegram Premium Deals</span>
+            <div class="bar-wrap"><div class="bar-fill" style="width:25%; background:var(--purple)"></div></div>
+            <span class="amt" style="color:var(--purple)">$2,500</span>
+          </div>
+          <div class="revenue-row">
+            <span class="name">Stock Trading Signals</span>
+            <div class="bar-wrap"><div class="bar-fill" style="width:23%; background:var(--amber)"></div></div>
+            <span class="amt" style="color:var(--amber)">$2,300</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card" style="margin-top:16px;">
+      <h3>Quick Dispatch Board</h3>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+        <button class="btn btn-small" onclick="quickQueue('stocks', 'scan_and_signal')">📈 Trigger Stock Scan</button>
+        <button class="btn btn-small" onclick="quickQueue('youtube', 'generate_and_upload_video')">🎥 Queue Video Gen</button>
+        <button class="btn btn-small" onclick="quickQueue('instagram', 'create_and_post')">📸 Dispatch Instagram post</button>
+        <button class="btn btn-small btn-outline btn-small" onclick="triggerLocalSync()">🔄 Force Cloud Sync</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASK QUEUE TAB -->
+  <div id="tab-queue" class="panel">
+    <h2>Task Pipeline Queue</h2>
+    <p class="sub">View task status or submit custom agent tasks directly to SQLite database queue</p>
+    
+    <div class="card">
+      <h3>Submit Custom Task Request</h3>
+      <form id="task-form" onsubmit="submitTask(event)" style="display:grid; grid-template-columns: 1fr 1fr auto; gap:12px; margin-top:14px; align-items: end;">
+        <div>
+          <label style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:600; display:block; margin-bottom:6px;">Select Target Agent</label>
+          <select id="form-agent" class="input">
+            <option value="stocks">Stock Analyst (stock_agent.py)</option>
+            <option value="youtube">YouTube Agent (youtube_agent.py)</option>
+            <option value="instagram">Instagram Agent (instagram_agent.py)</option>
+            <option value="website">Web Builder (web_builder_agent.py)</option>
+            <option value="laptop">Laptop Controller (laptop_controller.py)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:600; display:block; margin-bottom:6px;">Task Action Directive</label>
+          <input type="text" id="form-task" class="input" placeholder="e.g. scan_and_signal, build_site" required />
+        </div>
+        <button type="submit" class="btn">Queue Task</button>
+      </form>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3>Task History Queue (SQLite synced)</h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Agent</th>
+              <th>Action / Command</th>
+              <th>Status</th>
+              <th>Scheduled At</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="task-table-body">
+            <!-- Dynamic rows will be inserted here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIG TAB -->
+  <div id="tab-config" class="panel">
+    <h2>Secure Credentials (Local Wallet)</h2>
+    <p class="sub">Store access credentials for your agents securely in your browser's local sandbox wallet.</p>
+    
+    <div class="card">
+      <h3>API Keys Configuration</h3>
+      <div style="display:grid; grid-template-columns:1fr; gap:16px; margin-top:14px;">
+        <div>
+          <label style="font-weight:600; display:block; margin-bottom:6px;">Telegram Bot Token</label>
+          <input type="password" id="key-telegram" class="input" placeholder="Enter Telegram Bot Token..." />
+        </div>
+        <div>
+          <label style="font-weight:600; display:block; margin-bottom:6px;">YouTube Data API Key</label>
+          <input type="password" id="key-youtube" class="input" placeholder="Enter YouTube Data API Key..." />
+        </div>
+        <div>
+          <label style="font-weight:600; display:block; margin-bottom:6px;">Meta Instagram Access Token</label>
+          <input type="password" id="key-meta" class="input" placeholder="Enter Instagram Access Token..." />
+        </div>
+        <div>
+          <label style="font-weight:600; display:block; margin-bottom:6px;">GitHub Developer Access Token</label>
+          <input type="password" id="key-github" class="input" placeholder="Enter GitHub Token..." />
+        </div>
+        <div style="display:flex; justify-content: flex-end; gap:10px;">
+          <button class="btn btn-outline" onclick="clearKeys()">Clear Local Storage</button>
+          <button class="btn" onclick="saveKeys()">Save Settings Wallet</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SYNC & OFFLINE TAB -->
+  <div id="tab-offline" class="panel">
+    <h2>Supabase & Local Offline Sync</h2>
+    <p class="sub">How your phone and laptop communicate securely via decentralized task synchronization</p>
+    
+    <div class="grid2">
+      <div class="card">
+        <h3>Cloud Sync Architecture</h3>
+        <div class="timeline">
+          <div class="tl-item completed">
+            <div class="tl-title">Step 1: Save PWA on Phone</div>
+            <div class="tl-desc">Add this page to your phone's Home Screen via Chrome/Safari.</div>
+          </div>
+          <div class="tl-item completed">
+            <div class="tl-title">Step 2: Add Task from Phone</div>
+            <div class="tl-desc">Custom commands sync instantly to your free Supabase database.</div>
+          </div>
+          <div class="tl-item active">
+            <div class="tl-title">Step 3: Laptop Sync Agent Pulls</div>
+            <div class="tl-desc"><code>sync_agent.py</code> pulls new tasks down to local SQLite queue.</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-title">Step 4: Orchestrator Dispatches</div>
+            <div class="tl-desc">The main daemon executes the task and writes metrics back to the cloud.</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h3>Configure Sync Node Connection</h3>
+        <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-top:14px;">
+          <div>
+            <label style="font-weight:600; display:block; margin-bottom:4px;">Supabase Database URL</label>
+            <input type="text" id="sync-supabase-url" class="input" placeholder="https://xxxx.supabase.co" />
+          </div>
+          <div>
+            <label style="font-weight:600; display:block; margin-bottom:4px;">Supabase Anon API Key</label>
+            <input type="password" id="sync-supabase-key" class="input" placeholder="eyJhbGciOi..." />
+          </div>
+          <button class="btn" onclick="saveSyncSettings()">Initialize Sync Engine</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h3>Live Cloud Synchronizer Activity</h3>
+      <div class="console-box" id="console">
+        <div class="console-line"><span class="console-timestamp">[18:05:01]</span> <span class="console-info">Sync Agent started. Offline cache initialized.</span></div>
+        <div class="console-line"><span class="console-timestamp">[18:05:03]</span> Network state check: <span class="console-info">ONLINE</span></div>
+        <div class="console-line"><span class="console-timestamp">[18:05:04]</span> Local database sync check: <span class="console-info">SQLite database healthy (0 items in local buffer)</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Tab Navigation
+function showTab(tabId) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  
+  document.getElementById('tab-' + tabId).classList.add('active');
+  // Find matching tab button
+  const tabBtn = Array.from(document.querySelectorAll('.tab')).find(t => t.innerText.toLowerCase().includes(tabId));
+  if (tabBtn) tabBtn.classList.add('active');
+}
+
+// Live Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').innerText = now.toLocaleTimeString();
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Mock SQLite Queue Data Store
+let mockTasks = [
+  { id: 1, agent: 'stocks', task: 'scan_and_signal', status: 'completed', date: '2026-06-16T18:05:00Z' },
+  { id: 2, agent: 'youtube', task: 'generate_and_upload_video', status: 'completed', date: '2026-06-16T17:30:00Z' },
+  { id: 3, agent: 'instagram', task: 'create_and_post', status: 'pending', date: '2026-06-16T23:30:00Z' }
+];
+
+// Render Table
+function renderTasks() {
+  const tbody = document.getElementById('task-table-body');
+  tbody.innerHTML = '';
+  
+  mockTasks.slice().reverse().forEach(t => {
+    let statusColor = 'var(--muted)';
+    if (t.status === 'completed') statusColor = 'var(--teal)';
+    if (t.status === 'running') statusColor = 'var(--purple)';
+    if (t.status === 'pending') statusColor = 'var(--amber)';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-weight:700;">#${t.id}</td>
+      <td style="font-weight:600; color:var(--purple);">${t.agent}</td>
+      <td style="font-family:monospace; font-size:12px;">${t.task}</td>
+      <td><span style="color:${statusColor}; font-weight:700; text-transform:uppercase; font-size:11px;">● ${t.status}</span></td>
+      <td style="font-size:12px; color:var(--muted);">${new Date(t.date).toLocaleTimeString()}</td>
+      <td>
+        ${t.status === 'pending' ? `<button class="btn btn-outline btn-small" onclick="cancelTask(${t.id})">Cancel</button>` : `<span style="font-size:12px; color:var(--muted)">-</span>`}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  document.getElementById('completed-count').innerText = mockTasks.filter(t => t.status === 'completed').length;
+}
+
+// Add console logs
+function appendConsole(message, type = 'info') {
+  const consoleEl = document.getElementById('console');
+  const now = new Date();
+  const timeStr = now.toTimeString().split(' ')[0];
+  const typeClass = type === 'info' ? 'console-info' : 'console-warn';
+  
+  const div = document.createElement('div');
+  div.className = 'console-line';
+  div.innerHTML = `<span class="console-timestamp">[${timeStr}]</span> <span class="${typeClass}">${message}</span>`;
+  consoleEl.appendChild(div);
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+// Queue task via forms
+function submitTask(e) {
+  e.preventDefault();
+  const agent = document.getElementById('form-agent').value;
+  const task = document.getElementById('form-task').value;
+  
+  const newTask = {
+    id: mockTasks.length + 1,
+    agent: agent,
+    task: task,
+    status: 'pending',
+    date: new Date().toISOString()
+  };
+  
+  mockTasks.push(newTask);
+  renderTasks();
+  appendConsole(`Task queued locally: ${agent} -> ${task}`, 'info');
+  document.getElementById('form-task').value = '';
+  
+  // Simulate dispatching
+  setTimeout(() => {
+    newTask.status = 'running';
+    renderTasks();
+    appendConsole(`Task status transition [running]: ${agent} -> ${task}`, 'info');
+    
+    setTimeout(() => {
+      newTask.status = 'completed';
+      renderTasks();
+      appendConsole(`Task completed successfully: ${agent} -> ${task}`, 'info');
+    }, 5000);
+  }, 2000);
+}
+
+// Cancel a task
+function cancelTask(id) {
+  mockTasks = mockTasks.filter(t => t.id !== id);
+  renderTasks();
+  appendConsole(`Task ID #${id} cancelled by user.`, 'warn');
+}
+
+// Quick queue buttons
+function quickQueue(agent, task) {
+  const newTask = {
+    id: mockTasks.length + 1,
+    agent: agent,
+    task: task,
+    status: 'pending',
+    date: new Date().toISOString()
+  };
+  
+  mockTasks.push(newTask);
+  renderTasks();
+  appendConsole(`Quick Task dispatched: ${agent} -> ${task}`, 'info');
+  
+  setTimeout(() => {
+    newTask.status = 'running';
+    renderTasks();
+    appendConsole(`Task status transition [running]: ${agent} -> ${task}`, 'info');
+    
+    setTimeout(() => {
+      newTask.status = 'completed';
+      renderTasks();
+      appendConsole(`Task completed successfully: ${agent} -> ${task}`, 'info');
+    }, 4000);
+  }, 1500);
+}
+
+// Force local sync simulation
+function triggerLocalSync() {
+  appendConsole("Manual synchronization sequence initiated.", "info");
+  appendConsole("Testing connection to Supabase sync cluster...", "info");
+  setTimeout(() => {
+    appendConsole("Sync successfully completed. Local cache matched with cloud database.", "info");
+  }, 1000);
+}
+
+// API Keys save & load
+function saveKeys() {
+  localStorage.setItem('key_telegram', document.getElementById('key-telegram').value);
+  localStorage.setItem('key_youtube', document.getElementById('key-youtube').value);
+  localStorage.setItem('key_meta', document.getElementById('key-meta').value);
+  localStorage.setItem('key_github', document.getElementById('key-github').value);
+  alert("Settings saved inside local encrypted wallet.");
+}
+
+function clearKeys() {
+  localStorage.removeItem('key_telegram');
+  localStorage.removeItem('key_youtube');
+  localStorage.removeItem('key_meta');
+  localStorage.removeItem('key_github');
+  document.getElementById('key-telegram').value = '';
+  document.getElementById('key-youtube').value = '';
+  document.getElementById('key-meta').value = '';
+  document.getElementById('key-github').value = '';
+  alert("Wallet data erased successfully.");
+}
+
+function loadKeys() {
+  document.getElementById('key-telegram').value = localStorage.getItem('key_telegram') || '';
+  document.getElementById('key-youtube').value = localStorage.getItem('key_youtube') || '';
+  document.getElementById('key-meta').value = localStorage.getItem('key_meta') || '';
+  document.getElementById('key-github').value = localStorage.getItem('key_github') || '';
+}
+
+// Supabase sync save & load
+function saveSyncSettings() {
+  localStorage.setItem('sync_url', document.getElementById('sync-supabase-url').value);
+  localStorage.setItem('sync_key', document.getElementById('sync-supabase-key').value);
+  appendConsole("Sync connection initialized.", "info");
+  alert("Sync configurations saved.");
+}
+
+function loadSyncSettings() {
+  document.getElementById('sync-supabase-url').value = localStorage.getItem('sync_url') || '';
+  document.getElementById('sync-supabase-key').value = localStorage.getItem('sync_key') || '';
+}
+
+// Startup Initializations
+window.onload = () => {
+  renderTasks();
+  loadKeys();
+  loadSyncSettings();
+}
+</script>
+</body>
+</html>

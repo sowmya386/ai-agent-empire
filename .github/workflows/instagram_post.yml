@@ -1,0 +1,31 @@
+name: Instagram Poster Agent
+
+on:
+  schedule:
+    # Run at 8:00 AM, 1:00 PM, and 7:00 PM UTC daily
+    - cron: '0 8,13,19 * * *'
+  workflow_dispatch: # Allow manual trigger from GitHub web/mobile UI
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install Pillow requests schedule
+
+      - name: Run Instagram Poster
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+        run: python instagram_agent.py

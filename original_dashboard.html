@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agent Empire — Zero Cost System</title>
+<style>
+:root {
+  --bg: #0f0f0f;
+  --bg2: #1a1a1a;
+  --bg3: #242424;
+  --border: #2e2e2e;
+  --text: #e8e8e8;
+  --muted: #888;
+  --purple: #7c6ff7;
+  --teal: #00d4aa;
+  --coral: #ff6b5b;
+  --amber: #f5a623;
+  --blue: #5ba4f5;
+  --green: #4caf7d;
+  --pink: #e57ab5;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.6; }
+.header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.logo { font-size: 18px; font-weight: 700; color: var(--purple); }
+.badge { background: #1a1a2e; color: var(--teal); border: 1px solid var(--teal); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.tabs { display: flex; gap: 2px; padding: 12px 20px 0; background: var(--bg2); border-bottom: 1px solid var(--border); overflow-x: auto; }
+.tab { padding: 8px 16px; border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; font-weight: 500; border-bottom: 2px solid transparent; white-space: nowrap; transition: all .15s; }
+.tab.active { color: var(--purple); border-bottom-color: var(--purple); }
+.tab:hover:not(.active) { color: var(--text); }
+.content { padding: 20px; max-width: 900px; margin: 0 auto; }
+.panel { display: none; }
+.panel.active { display: block; }
+h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+.sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.card-accent { border-left: 3px solid var(--purple); }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 4px; margin-bottom: 4px; }
+.tag-free { background: #0d2818; color: var(--green); border: 1px solid var(--green); }
+.tag-python { background: #1a1a2e; color: var(--blue); border: 1px solid var(--blue); }
+.tag-api { background: #2a1a10; color: var(--amber); border: 1px solid var(--amber); }
+pre { background: #0d0d0d; border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; font-size: 12px; line-height: 1.8; color: #c8d8e8; margin: 12px 0; }
+.kw { color: #c792ea; }
+.fn { color: #82aaff; }
+.str { color: #c3e88d; }
+.cm { color: #546e7a; }
+.num { color: #f78c6c; }
+.step { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start; }
+.step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--purple); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.step-body { flex: 1; }
+.metric-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.metric { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+.metric .val { font-size: 22px; font-weight: 700; }
+.metric .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.revenue-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.revenue-row .name { width: 160px; font-size: 12px; color: var(--muted); flex-shrink: 0; }
+.bar-wrap { flex: 1; background: var(--bg3); border-radius: 3px; height: 6px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; }
+.revenue-row .amt { font-size: 12px; font-weight: 600; min-width: 60px; text-align: right; }
+.tool-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.tool-row:last-child { border-bottom: none; }
+.status { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.online { background: var(--green); }
+.warn { background: var(--amber); }
+.link { color: var(--blue); text-decoration: none; font-size: 12px; }
+.link:hover { text-decoration: underline; }
+.copy-btn { background: var(--bg3); border: 1px solid var(--border); color: var(--muted); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; transition: all .15s; }
+.copy-btn:hover { border-color: var(--purple); color: var(--purple); }
+.agent-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+.agent-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.agent-title { font-weight: 600; font-size: 14px; }
+.progress { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+.progress-fill { height: 100%; border-radius: 2px; transition: width 2s ease; }
+.timeline { position: relative; padding-left: 20px; }
+.timeline::before { content:''; position:absolute; left:7px; top:0; bottom:0; width:1px; background:var(--border); }
+.tl { position: relative; padding: 0 0 16px 16px; }
+.tl::before { content:''; position:absolute; left:-7px; top:5px; width:10px; height:10px; border-radius:50%; background:var(--bg3); border:2px solid var(--border); }
+.tl.done::before { background:var(--green); border-color:var(--green); }
+.tl.active::before { background:var(--purple); border-color:var(--purple); box-shadow:0 0 0 3px rgba(124,111,247,.2); }
+.tl .tl-title { font-size:13px; font-weight:600; color:var(--text); }
+.tl .tl-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+.alert { background: #1a1200; border: 1px solid #3a2800; border-radius: 8px; padding: 12px 14px; margin: 12px 0; font-size: 12px; color: var(--amber); }
+.tip { background: #0d1a2e; border: 1px solid #1a3050; border-radius: 8px; padding: 12px 14px; margin: 12px 0; font-size: 12px; color: var(--blue); }
+@media (max-width: 600px) { .grid2,.grid3,.metric-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">⚡ AI Agent Empire</div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <span class="badge">ZERO INVESTMENT</span>
+    <span style="font-size:12px;color:var(--muted);" id="clock"></span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="show('overview',this)">Overview</button>
+  <button class="tab" onclick="show('agents',this)">5 Agents</button>
+  <button class="tab" onclick="show('youtube',this)">YouTube</button>
+  <button class="tab" onclick="show('instagram',this)">Instagram</button>
+  <button class="tab" onclick="show('website',this)">Web Builder</button>
+  <button class="tab" onclick="show('stocks',this)">Stocks</button>
+  <button class="tab" onclick="show('laptop',this)">Laptop Control</button>
+  <button class="tab" onclick="show('offline',this)">Offline+Phone</button>
+  <button class="tab" onclick="show('roadmap',this)">Roadmap</button>
+</div>
+
+<!-- OVERVIEW -->
+<div id="panel-overview" class="panel active content">
+  <h2>Zero-cost AI Agent Empire</h2>
+  <p class="sub">₹0 investment · All free tools · Works offline · Laptop + phone · Target: $10,000/month</p>
+
+  <div class="metric-row">
+    <div class="metric"><div class="val" style="color:var(--green)">$0</div><div class="lbl">Investment needed</div></div>
+    <div class="metric"><div class="val" style="color:var(--purple)">5</div><div class="lbl">AI agents</div></div>
+    <div class="metric"><div class="val" style="color:var(--amber)">$10k</div><div class="lbl">Monthly target</div></div>
+    <div class="metric"><div class="val" style="color:var(--teal)">24/7</div><div class="lbl">Runs automatically</div></div>
+  </div>
+
+  <div class="card card-accent" style="margin-bottom:16px;">
+    <h3>Revenue breakdown (all free tools)</h3>
+    <div style="margin-top:12px;">
+      <div class="revenue-row"><span class="name">YouTube AdSense</span><div class="bar-wrap"><div class="bar-fill" style="width:22%;background:var(--coral)"></div></div><span class="amt" style="color:var(--coral)">$2,200</span></div>
+      <div class="revenue-row"><span class="name">Website sales</span><div class="bar-wrap"><div class="bar-fill" style="width:30%;background:var(--teal)"></div></div><span class="amt" style="color:var(--teal)">$3,000</span></div>
+      <div class="revenue-row"><span class="name">IG brand deals</span><div class="bar-wrap"><div class="bar-fill" style="width:15%;background:var(--pink)"></div></div><span class="amt" style="color:var(--pink)">$1,500</span></div>
+      <div class="revenue-row"><span class="name">Stock trading</span><div class="bar-wrap"><div class="bar-fill" style="width:18%;background:var(--amber)"></div></div><span class="amt" style="color:var(--amber)">$1,800</span></div>
+      <div class="revenue-row"><span class="name">Affiliate (links)</span><div class="bar-wrap"><div class="bar-fill" style="width:15%;background:var(--blue)"></div></div><span class="amt" style="color:var(--blue)">$1,500</span></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Free tools you'll use</h3>
+      <div class="tool-row"><span><span class="status online"></span>Claude.ai free</span><span class="tag tag-free">FREE</span></div>
+      <div class="tool-row"><span><span class="status online"></span>Python 3 + pip</span><span class="tag tag-free">FREE</span></div>
+      <div class="tool-row"><span><span class="status online"></span>GitHub Pages</span><span class="tag tag-free">FREE</span></div>
+      <div class="tool-row"><span><span class="status online"></span>Vercel free tier</span><span class="tag tag-free">FREE</span></div>
+      <div class="tool-row"><span><span class="status online"></span>Supabase free (500MB)</span><span class="tag tag-free">FREE</span></div>
+      <div class="tool-row"><span><span class="status online"></span>Telegram Bot API</span><span class="tag tag-free">FREE</span></div>
+      <div class="tool-row"><span><span class="status online"></span>YouTube Data API v3</span><span class="tag tag-free">FREE quota</span></div>
+      <div class="tool-row"><span><span class="status online"></span>nsepython (NSE data)</span><span class="tag tag-free">FREE</span></div>
+      <div class="tool-row"><span><span class="status online"></span>PyAutoGUI (laptop ctrl)</span><span class="tag tag-free">FREE</span></div>
+    </div>
+    <div class="card">
+      <h3>System requirements</h3>
+      <div class="tool-row"><span>Laptop OS</span><span style="color:var(--muted);font-size:12px">Windows/Mac/Linux</span></div>
+      <div class="tool-row"><span>Python version</span><span style="color:var(--muted);font-size:12px">3.10+</span></div>
+      <div class="tool-row"><span>RAM needed</span><span style="color:var(--muted);font-size:12px">4GB minimum</span></div>
+      <div class="tool-row"><span>Storage</span><span style="color:var(--muted);font-size:12px">2GB free</span></div>
+      <div class="tool-row"><span>Internet</span><span style="color:var(--muted);font-size:12px">Optional (offline OK)</span></div>
+      <div class="tool-row"><span>Phone OS</span><span style="color:var(--muted);font-size:12px">Android/iOS Chrome</span></div>
+      <div class="tool-row"><span>Cost to start</span><span style="color:var(--green);font-size:12px;font-weight:700">₹0 ZERO</span></div>
+    </div>
+  </div>
+
+  <div class="tip">💡 Install Python first: <strong>python.org/downloads</strong> — then copy every code block below into files and run them.</div>
+</div>
+
+<!-- AGENTS -->
+<div id="panel-agents" class="panel content">
+  <h2>5 Autonomous agents</h2>
+  <p class="sub">Each agent runs independently. The orchestrator coordinates all of them.</p>
+
+  <div class="agent-card">
+    <div class="agent-header">
+      <span class="agent-title" style="color:var(--purple)">🧠 Orchestrator Brain</span>
+      <span class="tag tag-python">Python + SQLite</span>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Wakes every 30 minutes, reads task queue, assigns work to agents, logs results. Runs as background daemon on your laptop.</p>
+    <div class="progress"><div class="progress-fill" style="width:0%;background:var(--purple)" id="p1"></div></div>
+    <pre id="code-orchestrator"><span class="cm"># orchestrator.py — run once, keeps running forever</span>
+<span class="kw">import</span> sqlite3, time, subprocess, schedule
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime
+
+<span class="fn">def</span> <span class="fn">init_db</span>():
+    conn = sqlite3.connect(<span class="str">'agent_empire.db'</span>)
+    conn.execute(<span class="str">'''CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY,
+        agent TEXT, task TEXT, status TEXT,
+        created_at TEXT, done_at TEXT)'''</span>)
+    conn.commit()
+    <span class="kw">return</span> conn
+
+<span class="fn">def</span> <span class="fn">add_task</span>(conn, agent, task):
+    conn.execute(<span class="str">"INSERT INTO tasks VALUES (NULL,?,?,'pending',?,NULL)"</span>,
+                 (agent, task, datetime.now().isoformat()))
+    conn.commit()
+
+<span class="fn">def</span> <span class="fn">run_scheduled_tasks</span>(conn):
+    now = datetime.now()
+    <span class="cm"># YouTube: 1 video per day at 9am</span>
+    <span class="kw">if</span> now.hour == <span class="num">9</span> <span class="kw">and</span> now.minute < <span class="num">30</span>:
+        add_task(conn, <span class="str">'youtube'</span>, <span class="str">'generate_and_upload_video'</span>)
+    <span class="cm"># Instagram: 3 posts per day</span>
+    <span class="kw">if</span> now.hour <span class="kw">in</span> [<span class="num">8</span>,<span class="num">13</span>,<span class="num">19</span>] <span class="kw">and</span> now.minute < <span class="num">30</span>:
+        add_task(conn, <span class="str">'instagram'</span>, <span class="str">'create_and_post'</span>)
+    <span class="cm"># Stock scan: every 30 minutes during market hours</span>
+    <span class="kw">if</span> <span class="num">9</span> <= now.hour <= <span class="num">15</span>:
+        add_task(conn, <span class="str">'stocks'</span>, <span class="str">'scan_and_signal'</span>)
+
+<span class="fn">def</span> <span class="fn">dispatch_tasks</span>(conn):
+    tasks = conn.execute(
+        <span class="str">"SELECT * FROM tasks WHERE status='pending'"</span>).fetchall()
+    <span class="kw">for</span> task <span class="kw">in</span> tasks:
+        print(<span class="str">f"Running: {task[1]} → {task[2]}"</span>)
+        subprocess.Popen([<span class="str">'python'</span>, <span class="str">f'{task[1]}_agent.py'</span>, task[<span class="num">2</span>]])
+        conn.execute(<span class="str">"UPDATE tasks SET status='running' WHERE id=?"</span>, (task[<span class="num">0</span>],))
+    conn.commit()
+
+conn = init_db()
+schedule.every(<span class="num">30</span>).minutes.do(<span class="kw">lambda</span>: run_scheduled_tasks(conn))
+schedule.every(<span class="num">5</span>).minutes.do(<span class="kw">lambda</span>: dispatch_tasks(conn))
+<span class="kw">while</span> <span class="kw">True</span>:
+    schedule.run_pending()
+    time.sleep(<span class="num">60</span>)</pre>
+    <button class="copy-btn" onclick="copyCode('code-orchestrator')">Copy code</button>
+  </div>
+
+  <div class="alert">Run this in terminal: <code>pip install schedule</code> then <code>python orchestrator.py</code> — it runs forever in the background.</div>
+</div>
+
+<!-- YOUTUBE -->
+<div id="panel-youtube" class="panel content">
+  <h2>YouTube agent</h2>
+  <p class="sub">Free tools: Claude.ai + YouTube Data API v3 + gTTS (free text-to-speech) + MoviePy</p>
+
+  <div class="grid2" style="margin-bottom:16px;">
+    <div class="card"><span class="tag tag-free">FREE</span><span class="tag tag-python">Python</span><br><br><h3>Pipeline</h3>
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Niche research</strong><br><span style="color:var(--muted);font-size:12px">PyTrends (free Google Trends API) finds trending topics</span></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Script generation</strong><br><span style="color:var(--muted);font-size:12px">Claude.ai free — paste prompt, get 3000-word script</span></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Voice generation</strong><br><span style="color:var(--muted);font-size:12px">gTTS (Google Text-to-Speech) — completely free</span></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Video assembly</strong><br><span style="color:var(--muted);font-size:12px">MoviePy — free Python video editor</span></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-body"><strong>Auto-upload</strong><br><span style="color:var(--muted);font-size:12px">YouTube Data API v3 — free 10,000 units/day</span></div></div>
+    </div>
+    <div class="card">
+      <h3>Expected revenue</h3>
+      <div class="tool-row"><span>Videos per day</span><span style="color:var(--amber)">1 auto</span></div>
+      <div class="tool-row"><span>Month 1 (setup)</span><span style="color:var(--muted)">$0</span></div>
+      <div class="tool-row"><span>Month 3 (1k subs)</span><span style="color:var(--teal)">$200</span></div>
+      <div class="tool-row"><span>Month 6 (10k subs)</span><span style="color:var(--green)">$800</span></div>
+      <div class="tool-row"><span>Month 12 (50k subs)</span><span style="color:var(--coral)">$2,200+</span></div>
+      <div class="tool-row"><span>Niche to pick</span><span style="color:var(--purple)">AI tools / Finance</span></div>
+    </div>
+  </div>
+
+  <pre id="code-youtube"><span class="cm"># youtube_agent.py — pip install google-api-python-client gtts moviepy pytrends</span>
+<span class="kw">import</span> os, sys
+<span class="kw">from</span> gtts <span class="kw">import</span> gTTS
+<span class="kw">from</span> moviepy.editor <span class="kw">import</span> AudioFileClip, ColorClip, TextClip, CompositeVideoClip
+<span class="kw">from</span> googleapiclient.discovery <span class="kw">import</span> build
+<span class="kw">from</span> googleapiclient.http <span class="kw">import</span> MediaFileUpload
+<span class="kw">from</span> pytrends.request <span class="kw">import</span> TrendReq
+
+<span class="cm"># Step 1: Find trending topic</span>
+<span class="fn">def</span> <span class="fn">get_trending_topic</span>():
+    pt = TrendReq(hl=<span class="str">'en-IN'</span>, tz=<span class="num">330</span>)
+    pt.build_payload([<span class="str">'AI tools'</span>,<span class="str">'make money online'</span>], geo=<span class="str">'IN'</span>)
+    data = pt.related_queries()
+    topics = data[<span class="str">'AI tools'</span>][<span class="str">'top'</span>]
+    <span class="kw">return</span> topics.iloc[<span class="num">0</span>][<span class="str">'query'</span>] <span class="kw">if</span> <span class="kw">not</span> topics.empty <span class="kw">else</span> <span class="str">'AI tools 2026'</span>
+
+<span class="cm"># Step 2: Generate script (paste into Claude.ai free or use Ollama locally)</span>
+SCRIPT_PROMPT = <span class="str">"""Write a 5-minute YouTube script about: {topic}
+Include: hook (30s), 3 main points, call to action. 
+Make it engaging, add timestamps."""</span>
+
+<span class="cm"># Step 3: Text to speech — FREE with gTTS</span>
+<span class="fn">def</span> <span class="fn">make_audio</span>(text, filename=<span class="str">'audio.mp3'</span>):
+    tts = gTTS(text=text, lang=<span class="str">'en'</span>, slow=<span class="kw">False</span>)
+    tts.save(filename)
+    <span class="kw">return</span> filename
+
+<span class="cm"># Step 4: Assemble video with MoviePy — FREE</span>
+<span class="fn">def</span> <span class="fn">make_video</span>(audio_file, title, output=<span class="str">'video.mp4'</span>):
+    audio = AudioFileClip(audio_file)
+    bg = ColorClip(size=(<span class="num">1920</span>,<span class="num">1080</span>), color=[<span class="num">15</span>,<span class="num">15</span>,<span class="num">30</span>], duration=audio.duration)
+    txt = TextClip(title, fontsize=<span class="num">60</span>, color=<span class="str">'white'</span>, font=<span class="str">'Arial-Bold'</span>)
+    txt = txt.set_pos(<span class="str">'center'</span>).set_duration(audio.duration)
+    video = CompositeVideoClip([bg, txt]).set_audio(audio)
+    video.write_videofile(output, fps=<span class="num">24</span>, codec=<span class="str">'libx264'</span>)
+    <span class="kw">return</span> output
+
+<span class="cm"># Step 5: Upload to YouTube — FREE API</span>
+<span class="cm"># Get credentials from console.cloud.google.com (free)</span>
+<span class="fn">def</span> <span class="fn">upload_to_youtube</span>(video_file, title, description):
+    <span class="cm"># Set up OAuth2 — one-time setup at console.cloud.google.com</span>
+    youtube = build(<span class="str">'youtube'</span>, <span class="str">'v3'</span>, developerKey=os.environ[<span class="str">'YT_API_KEY'</span>])
+    request = youtube.videos().insert(
+        part=<span class="str">'snippet,status'</span>,
+        body={<span class="str">'snippet'</span>:{<span class="str">'title'</span>:title,<span class="str">'description'</span>:description,
+               <span class="str">'tags'</span>:[<span class="str">'AI','money','automation'</span>],<span class="str">'categoryId'</span>:<span class="str">'28'</span>},
+              <span class="str">'status'</span>:{<span class="str">'privacyStatus'</span>:<span class="str">'public'</span>}},
+        media_body=MediaFileUpload(video_file))
+    response = request.execute()
+    print(<span class="str">f"Uploaded: youtube.com/watch?v={response['id']}"</span>)
+
+<span class="cm"># Run pipeline</span>
+topic = get_trending_topic()
+audio = make_audio(<span class="str">f"Today we talk about {topic}..."</span>)
+video = make_video(audio, topic)
+upload_to_youtube(video, topic, <span class="str">f"Learn about {topic}"</span>)</pre>
+  <button class="copy-btn" onclick="copyCode('code-youtube')">Copy code</button>
+
+  <div class="tip">Install: <code>pip install google-api-python-client gtts moviepy pytrends</code><br>Get free YouTube API key: <a class="link" href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a> → New Project → Enable YouTube Data API v3</div>
+</div>
+
+<!-- INSTAGRAM -->
+<div id="panel-instagram" class="panel content">
+  <h2>Instagram agent</h2>
+  <p class="sub">Free tools: Meta Graph API + Pillow (image gen) + schedule library</p>
+
+  <div class="grid2" style="margin-bottom:16px;">
+    <div class="card">
+      <h3>What it does automatically</h3>
+      <div class="tool-row"><span>Creates posts</span><span style="color:var(--teal)">3 per day</span></div>
+      <div class="tool-row"><span>Auto-captions</span><span style="color:var(--teal)">AI generated</span></div>
+      <div class="tool-row"><span>Hashtag research</span><span style="color:var(--teal)">Auto-picked</span></div>
+      <div class="tool-row"><span>Auto-replies</span><span style="color:var(--teal)">Common DMs</span></div>
+      <div class="tool-row"><span>Story posts</span><span style="color:var(--teal)">2 per day</span></div>
+      <div class="tool-row"><span>Reels</span><span style="color:var(--amber)">Semi-auto</span></div>
+    </div>
+    <div class="card">
+      <h3>Revenue path</h3>
+      <div class="tl done"><div class="tl-title">0–1k followers</div><div class="tl-sub">Build niche content daily</div></div>
+      <div class="tl done"><div class="tl-title">1k–10k followers</div><div class="tl-sub">Affiliate links in bio ($200–500/mo)</div></div>
+      <div class="tl active"><div class="tl-title">10k–50k followers</div><div class="tl-sub">Brand deals start ($500–$2k/post)</div></div>
+      <div class="tl"><div class="tl-title">50k+ followers</div><div class="tl-sub">$1,500+/month consistent</div></div>
+    </div>
+  </div>
+
+  <pre id="code-instagram"><span class="cm"># instagram_agent.py — pip install requests Pillow schedule</span>
+<span class="kw">import</span> requests, os, schedule, time
+<span class="kw">from</span> PIL <span class="kw">import</span> Image, ImageDraw, ImageFont
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime
+
+IG_TOKEN = os.environ.get(<span class="str">'IG_ACCESS_TOKEN'</span>)  <span class="cm"># Free from Meta for Developers</span>
+IG_USER_ID = os.environ.get(<span class="str">'IG_USER_ID'</span>)
+
+CAPTIONS = [
+    <span class="str">"5 AI tools that save 10 hours a week 🤖\n\n1. Claude AI\n2. Notion AI\n3. Otter.ai\n4. Gamma.app\n5. Perplexity\n\nSave this post! ♻️\n\n#AItools #productivity #automation #makemoneyonline"</span>,
+    <span class="str">"How I made ₹50,000 this month using FREE AI tools 💰\n\nNo investment. Just:\n✅ Claude AI for content\n✅ Python for automation\n✅ Canva free for design\n\nFollow for daily tips 👉\n\n#sidehustle #AIincome #freedomlife"</span>,
+]
+
+<span class="fn">def</span> <span class="fn">create_post_image</span>(text, filename=<span class="str">'post.jpg'</span>):
+    <span class="cm"># Create image with Pillow — completely free</span>
+    img = Image.new(<span class="str">'RGB'</span>, (<span class="num">1080</span>,<span class="num">1080</span>), color=(<span class="num">15</span>,<span class="num">15</span>,<span class="num">35</span>))
+    draw = ImageDraw.Draw(img)
+    <span class="kw">try</span>:
+        font = ImageFont.truetype(<span class="str">'arial.ttf'</span>, <span class="num">50</span>)
+        small = ImageFont.truetype(<span class="str">'arial.ttf'</span>, <span class="num">36</span>)
+    <span class="kw">except</span>:
+        font = ImageFont.load_default()
+        small = font
+    draw.text((<span class="num">80</span>,<span class="num">80</span>), <span class="str">"⚡ AI EMPIRE"</span>, fill=(<span class="num">124</span>,<span class="num">111</span>,<span class="num">247</span>), font=font)
+    draw.text((<span class="num">80</span>,<span class="num">200</span>), text[:<span class="num">200</span>], fill=(<span class="num">255</span>,<span class="num">255</span>,<span class="num">255</span>), font=small)
+    img.save(filename, quality=<span class="num">95</span>)
+    <span class="kw">return</span> filename
+
+<span class="fn">def</span> <span class="fn">upload_to_instagram</span>(image_path, caption):
+    <span class="cm"># Step 1: Upload image to get container ID</span>
+    url = <span class="str">f"https://graph.facebook.com/v20.0/{IG_USER_ID}/media"</span>
+    <span class="cm"># Note: image must be a public URL — host on GitHub Pages free</span>
+    params = {<span class="str">'image_url'</span>: <span class="str">'YOUR_GITHUB_PAGES_IMAGE_URL'</span>,
+              <span class="str">'caption'</span>: caption,
+              <span class="str">'access_token'</span>: IG_TOKEN}
+    r = requests.post(url, params=params).json()
+    container_id = r.get(<span class="str">'id'</span>)
+    <span class="cm"># Step 2: Publish</span>
+    publish_url = <span class="str">f"https://graph.facebook.com/v20.0/{IG_USER_ID}/media_publish"</span>
+    requests.post(publish_url, params={<span class="str">'creation_id'</span>:container_id,<span class="str">'access_token'</span>:IG_TOKEN})
+    print(<span class="str">f"Posted at {datetime.now().strftime('%H:%M')}"</span>)
+
+<span class="fn">def</span> <span class="fn">auto_post</span>():
+    <span class="kw">import</span> random
+    caption = random.choice(CAPTIONS)
+    img = create_post_image(<span class="str">"Today's AI tip"</span>)
+    upload_to_instagram(img, caption)
+
+schedule.every().day.at(<span class="str">"08:00"</span>).do(auto_post)
+schedule.every().day.at(<span class="str">"13:00"</span>).do(auto_post)
+schedule.every().day.at(<span class="str">"19:00"</span>).do(auto_post)
+
+<span class="kw">while</span> <span class="kw">True</span>:
+    schedule.run_pending()
+    time.sleep(<span class="num">60</span>)</pre>
+  <button class="copy-btn" onclick="copyCode('code-instagram')">Copy code</button>
+
+  <div class="tip">Get free Meta API token: <a class="link" href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> → Create App → Instagram → Get Access Token</div>
+</div>
+
+<!-- WEBSITE -->
+<div id="panel-website" class="panel content">
+  <h2>Web builder agent</h2>
+  <p class="sub">Free tools: Claude.ai (write code) + GitHub Pages (free hosting) + Vercel free tier</p>
+
+  <div class="grid2" style="margin-bottom:16px;">
+    <div class="card">
+      <h3>How to make money</h3>
+      <div class="tool-row"><span>Build & sell websites</span><span style="color:var(--amber)">$200–$1,500 each</span></div>
+      <div class="tool-row"><span>Sell on Flippa.com</span><span style="color:var(--teal)">Free listing</span></div>
+      <div class="tool-row"><span>Facebook Groups</span><span style="color:var(--teal)">Free buyers</span></div>
+      <div class="tool-row"><span>SaaS micro-tools</span><span style="color:var(--coral)">$5–$29/month</span></div>
+      <div class="tool-row"><span>AdSense on sites</span><span style="color:var(--blue)">Passive income</span></div>
+      <div class="tool-row"><span>Affiliate sites</span><span style="color:var(--purple)">Commission income</span></div>
+    </div>
+    <div class="card">
+      <h3>Website types to build</h3>
+      <div class="tool-row"><span>AI tools directory</span><span style="color:var(--teal)">High demand</span></div>
+      <div class="tool-row"><span>Niche blogs</span><span style="color:var(--teal)">AdSense+affiliate</span></div>
+      <div class="tool-row"><span>Resume builder tools</span><span style="color:var(--amber)">Easy to sell</span></div>
+      <div class="tool-row"><span>Local business sites</span><span style="color:var(--coral)">₹5k–₹20k each</span></div>
+      <div class="tool-row"><span>E-commerce stores</span><span style="color:var(--blue)">Dropshipping</span></div>
+    </div>
+  </div>
+
+  <pre id="code-website"><span class="cm"># web_builder_agent.py — pip install requests gitpython</span>
+<span class="kw">import</span> os, subprocess, requests
+
+<span class="cm"># This agent: generates website code using Claude API, deploys to GitHub Pages FREE</span>
+
+GITHUB_TOKEN = os.environ.get(<span class="str">'GITHUB_TOKEN'</span>)  <span class="cm"># Free at github.com/settings/tokens</span>
+GITHUB_USER = <span class="str">'YOUR_USERNAME'</span>
+
+<span class="fn">def</span> <span class="fn">create_github_repo</span>(repo_name):
+    <span class="cm"># Create repo via GitHub API — FREE</span>
+    r = requests.post(
+        <span class="str">'https://api.github.com/user/repos'</span>,
+        headers={<span class="str">'Authorization'</span>: <span class="str">f'token {GITHUB_TOKEN}'</span>},
+        json={<span class="str">'name'</span>:repo_name,<span class="str">'auto_init'</span>:<span class="kw">True</span>,<span class="str">'private'</span>:<span class="kw">False</span>})
+    <span class="kw">return</span> r.json()[<span class="str">'html_url'</span>]
+
+<span class="fn">def</span> <span class="fn">deploy_to_github_pages</span>(repo_name, html_content, js_content=<span class="str">''</span>):
+    <span class="cm"># Push files to GitHub — auto deploys to Pages</span>
+    <span class="kw">import</span> base64
+    files = {<span class="str">'index.html'</span>: html_content, <span class="str">'app.js'</span>: js_content}
+    <span class="kw">for</span> fname, content <span class="kw">in</span> files.items():
+        encoded = base64.b64encode(content.encode()).decode()
+        requests.put(
+            <span class="str">f'https://api.github.com/repos/{GITHUB_USER}/{repo_name}/contents/{fname}'</span>,
+            headers={<span class="str">'Authorization'</span>: <span class="str">f'token {GITHUB_TOKEN}'</span>},
+            json={<span class="str">'message'</span>:<span class="str">f'Deploy {fname}'</span>,<span class="str">'content'</span>:encoded})
+    <span class="cm"># Enable GitHub Pages</span>
+    requests.post(
+        <span class="str">f'https://api.github.com/repos/{GITHUB_USER}/{repo_name}/pages'</span>,
+        headers={<span class="str">'Authorization'</span>: <span class="str">f'token {GITHUB_TOKEN}'</span>},
+        json={<span class="str">'source'</span>:{<span class="str">'branch'</span>:<span class="str">'main'</span>,<span class="str">'path'</span>:<span class="str">'/'</span>}})
+    site_url = <span class="str">f"https://{GITHUB_USER}.github.io/{repo_name}"</span>
+    print(<span class="str">f"Live at: {site_url}"</span>)
+    <span class="kw">return</span> site_url
+
+<span class="cm"># Sample: build an AI tools directory site</span>
+SAMPLE_HTML = <span class="str">"""&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;
+&lt;title&gt;Top AI Tools 2026&lt;/title&gt;
+&lt;meta name="description" content="Best free AI tools"&gt;
+&lt;/head&gt;&lt;body style="font-family:sans-serif;max-width:900px;margin:0 auto"&gt;
+&lt;h1&gt;Top 10 Free AI Tools&lt;/h1&gt;
+&lt;!-- Content generated by Claude AI --&gt;
+&lt;/body&gt;&lt;/html&gt;"""</span>
+
+repo = create_github_repo(<span class="str">'ai-tools-2026'</span>)
+site = deploy_to_github_pages(<span class="str">'ai-tools-2026'</span>, SAMPLE_HTML)
+print(<span class="str">f"Website live: {site}"</span>)
+print(<span class="str">"Now list for sale on flippa.com (free listing)"</span>)</pre>
+  <button class="copy-btn" onclick="copyCode('code-website')">Copy code</button>
+
+  <div class="tip">Use Claude.ai free to generate full website HTML → paste into this script → auto-deploys. Get GitHub token free at <a class="link" href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a></div>
+</div>
+
+<!-- STOCKS -->
+<div id="panel-stocks" class="panel content">
+  <h2>Stock analyst agent</h2>
+  <p class="sub">Free tools: nsepython + pandas-ta (technical analysis) + Telegram Bot (free alerts)</p>
+
+  <div class="alert">⚠️ This is for educational signals only. Always verify before trading. Stock market involves risk. Paper trade for 30 days first.</div>
+
+  <div class="grid2" style="margin-bottom:16px;">
+    <div class="card">
+      <h3>Free data sources</h3>
+      <div class="tool-row"><span>NSE India data</span><span style="color:var(--teal)">nsepython (free)</span></div>
+      <div class="tool-row"><span>Historical data</span><span style="color:var(--teal)">yfinance (free)</span></div>
+      <div class="tool-row"><span>Technical analysis</span><span style="color:var(--teal)">pandas-ta (free)</span></div>
+      <div class="tool-row"><span>Alerts</span><span style="color:var(--teal)">Telegram Bot (free)</span></div>
+      <div class="tool-row"><span>Groww link</span><span style="color:var(--amber)">Deep link to app</span></div>
+    </div>
+    <div class="card">
+      <h3>Signals it generates</h3>
+      <div class="tool-row"><span>RSI oversold (&lt;30)</span><span style="color:var(--green)">BUY signal</span></div>
+      <div class="tool-row"><span>RSI overbought (&gt;70)</span><span style="color:var(--coral)">SELL signal</span></div>
+      <div class="tool-row"><span>MACD crossover</span><span style="color:var(--green)">BUY signal</span></div>
+      <div class="tool-row"><span>Volume spike</span><span style="color:var(--amber)">WATCH signal</span></div>
+      <div class="tool-row"><span>Support bounce</span><span style="color:var(--green)">BUY signal</span></div>
+    </div>
+  </div>
+
+  <pre id="code-stocks"><span class="cm"># stock_agent.py — pip install nsepython yfinance pandas-ta requests</span>
+<span class="kw">import</span> yfinance <span class="kw">as</span> yf
+<span class="kw">import</span> pandas_ta <span class="kw">as</span> ta
+<span class="kw">import</span> requests, os, schedule, time
+
+TELEGRAM_TOKEN = os.environ.get(<span class="str">'TELEGRAM_BOT_TOKEN'</span>)  <span class="cm"># Free: @BotFather on Telegram</span>
+TELEGRAM_CHAT_ID = os.environ.get(<span class="str">'TELEGRAM_CHAT_ID'</span>)
+
+WATCHLIST = [<span class="str">'HDFCBANK.NS'</span>,<span class="str">'RELIANCE.NS'</span>,<span class="str">'INFY.NS'</span>,<span class="str">'TCS.NS'</span>,<span class="str">'ICICIBANK.NS'</span>]
+
+<span class="fn">def</span> <span class="fn">send_telegram</span>(msg):
+    <span class="cm"># Free Telegram Bot API</span>
+    url = <span class="str">f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"</span>
+    requests.post(url, json={<span class="str">'chat_id'</span>:TELEGRAM_CHAT_ID,<span class="str">'text'</span>:msg,<span class="str">'parse_mode'</span>:<span class="str">'HTML'</span>})
+
+<span class="fn">def</span> <span class="fn">analyse_stock</span>(symbol):
+    <span class="cm"># Get free historical data</span>
+    df = yf.download(symbol, period=<span class="str">'3mo'</span>, interval=<span class="str">'1d'</span>, progress=<span class="kw">False</span>)
+    <span class="kw">if</span> df.empty: <span class="kw">return</span>
+    <span class="cm"># Calculate free technical indicators</span>
+    df.ta.rsi(append=<span class="kw">True</span>)
+    df.ta.macd(append=<span class="kw">True</span>)
+    df.ta.sma(<span class="num">20</span>, append=<span class="kw">True</span>)
+    df.ta.sma(<span class="num">50</span>, append=<span class="kw">True</span>)
+    latest = df.iloc[-<span class="num">1</span>]
+    rsi = latest.get(<span class="str">'RSI_14'</span>, <span class="num">50</span>)
+    price = latest[<span class="str">'Close'</span>]
+    macd = latest.get(<span class="str">'MACD_12_26_9'</span>, <span class="num">0</span>)
+    signal_line = latest.get(<span class="str">'MACDs_12_26_9'</span>, <span class="num">0</span>)
+    <span class="cm"># Generate signal</span>
+    signal = <span class="str">"HOLD"</span>
+    reason = <span class="str">""</span>
+    <span class="kw">if</span> rsi < <span class="num">30</span>:
+        signal = <span class="str">"🟢 BUY"</span>
+        reason = <span class="str">f"RSI oversold at {rsi:.1f}"</span>
+    <span class="kw">elif</span> rsi > <span class="num">70</span>:
+        signal = <span class="str">"🔴 SELL"</span>
+        reason = <span class="str">f"RSI overbought at {rsi:.1f}"</span>
+    <span class="kw">elif</span> macd > signal_line <span class="kw">and</span> macd > <span class="num">0</span>:
+        signal = <span class="str">"🟢 BUY"</span>
+        reason = <span class="str">"MACD bullish crossover"</span>
+    <span class="kw">if</span> signal != <span class="str">"HOLD"</span>:
+        <span class="cm"># Groww deep link — opens Groww app on phone</span>
+        groww_link = <span class="str">f"https://groww.in/stocks/{symbol.replace('.NS','').lower()}"</span>
+        msg = <span class="str">f"""&lt;b&gt;{signal}: {symbol}&lt;/b&gt;
+Price: ₹{price:.2f}
+RSI: {rsi:.1f}
+Reason: {reason}
+&lt;a href="{groww_link}"&gt;Open in Groww&lt;/a&gt;
+⚠️ Paper trade only — verify before buying"""</span>
+        send_telegram(msg)
+        print(msg)
+
+<span class="fn">def</span> <span class="fn">scan_all</span>():
+    print(<span class="str">f"Scanning {len(WATCHLIST)} stocks..."</span>)
+    <span class="kw">for</span> sym <span class="kw">in</span> WATCHLIST:
+        <span class="kw">try</span>: analyse_stock(sym)
+        <span class="kw">except</span> Exception <span class="kw">as</span> e: print(<span class="str">f"Error {sym}: {e}"</span>)
+
+schedule.every(<span class="num">30</span>).minutes.do(scan_all)
+scan_all()  <span class="cm"># Run immediately</span>
+<span class="kw">while</span> <span class="kw">True</span>:
+    schedule.run_pending()
+    time.sleep(<span class="num">60</span>)</pre>
+  <button class="copy-btn" onclick="copyCode('code-stocks')">Copy code</button>
+
+  <div class="tip">Create free Telegram Bot: Open Telegram → search @BotFather → /newbot → copy the token → set as TELEGRAM_BOT_TOKEN environment variable</div>
+</div>
+
+<!-- LAPTOP CONTROL -->
+<div id="panel-laptop" class="panel content">
+  <h2>Laptop controller agent</h2>
+  <p class="sub">Free tools: PyAutoGUI + Selenium + keyboard library — controls your entire laptop automatically</p>
+
+  <div class="card" style="margin-bottom:16px;">
+    <h3>What it can control on your laptop</h3>
+    <div class="grid3" style="margin-top:10px;">
+      <div><div class="tag tag-free">Mouse clicks</div></div>
+      <div><div class="tag tag-free">Keyboard typing</div></div>
+      <div><div class="tag tag-free">Open any app</div></div>
+      <div><div class="tag tag-free">Browser control</div></div>
+      <div><div class="tag tag-free">File management</div></div>
+      <div><div class="tag tag-free">Screenshot+OCR</div></div>
+      <div><div class="tag tag-free">Form filling</div></div>
+      <div><div class="tag tag-free">Copy/paste</div></div>
+      <div><div class="tag tag-free">Window switching</div></div>
+    </div>
+  </div>
+
+  <pre id="code-laptop"><span class="cm"># laptop_controller.py — pip install pyautogui selenium keyboard pillow pytesseract</span>
+<span class="kw">import</span> pyautogui, time, keyboard, subprocess
+<span class="kw">from</span> PIL <span class="kw">import</span> Image
+<span class="kw">import</span> pytesseract  <span class="cm"># Free OCR — reads what's on screen</span>
+
+pyautogui.FAILSAFE = <span class="kw">True</span>  <span class="cm"># Move mouse to corner to stop</span>
+pyautogui.PAUSE = <span class="num">0.5</span>
+
+<span class="fn">def</span> <span class="fn">open_app</span>(app_name):
+    <span class="kw">import</span> os
+    <span class="kw">if</span> os.name == <span class="str">'nt'</span>:  <span class="cm"># Windows</span>
+        subprocess.Popen([<span class="str">'start'</span>, app_name], shell=<span class="kw">True</span>)
+    <span class="kw">else</span>:  <span class="cm"># Mac/Linux</span>
+        subprocess.Popen([<span class="str">'open'</span>, <span class="str">'-a'</span>, app_name])
+    time.sleep(<span class="num">2</span>)
+
+<span class="fn">def</span> <span class="fn">click_at</span>(x, y, double=<span class="kw">False</span>):
+    pyautogui.moveTo(x, y, duration=<span class="num">0.5</span>)
+    pyautogui.doubleClick() <span class="kw">if</span> double <span class="kw">else</span> pyautogui.click()
+
+<span class="fn">def</span> <span class="fn">type_text</span>(text, interval=<span class="num">0.05</span>):
+    pyautogui.typewrite(text, interval=interval)
+
+<span class="fn">def</span> <span class="fn">find_and_click</span>(image_path, confidence=<span class="num">0.8</span>):
+    <span class="cm"># Find a button/element on screen by image — FREE</span>
+    location = pyautogui.locateCenterOnScreen(image_path, confidence=confidence)
+    <span class="kw">if</span> location:
+        pyautogui.click(location)
+        <span class="kw">return</span> <span class="kw">True</span>
+    <span class="kw">return</span> <span class="kw">False</span>
+
+<span class="fn">def</span> <span class="fn">read_screen_text</span>(region=<span class="kw">None</span>):
+    <span class="cm"># Free OCR — reads any text on screen</span>
+    screenshot = pyautogui.screenshot(region=region)
+    <span class="kw">return</span> pytesseract.image_to_string(screenshot)
+
+<span class="fn">def</span> <span class="fn">open_browser_url</span>(url):
+    <span class="kw">import</span> webbrowser
+    webbrowser.open(url)
+    time.sleep(<span class="num">3</span>)
+
+<span class="cm"># Example: Auto-post to Claude.ai and get script</span>
+<span class="fn">def</span> <span class="fn">generate_content_with_claude</span>(prompt):
+    open_browser_url(<span class="str">'https://claude.ai'</span>)
+    time.sleep(<span class="num">4</span>)
+    <span class="cm"># Find the text input and type</span>
+    pyautogui.hotkey(<span class="str">'ctrl'</span>, <span class="str">'l'</span>)
+    time.sleep(<span class="num">1</span>)
+    type_text(prompt)
+    pyautogui.press(<span class="str">'enter'</span>)
+    time.sleep(<span class="num">15</span>)  <span class="cm"># Wait for response</span>
+    <span class="cm"># Select all text and copy</span>
+    pyautogui.hotkey(<span class="str">'ctrl'</span>, <span class="str">'a'</span>)
+    pyautogui.hotkey(<span class="str">'ctrl'</span>, <span class="str">'c'</span>)
+    <span class="kw">import</span> pyperclip
+    <span class="kw">return</span> pyperclip.paste()
+
+<span class="cm"># Selenium for browser automation — FREE</span>
+<span class="fn">def</span> <span class="fn">selenium_browser_task</span>(url, actions):
+    <span class="kw">from</span> selenium <span class="kw">import</span> webdriver
+    <span class="kw">from</span> selenium.webdriver.common.by <span class="kw">import</span> By
+    <span class="kw">from</span> selenium.webdriver.chrome.options <span class="kw">import</span> Options
+    opts = Options()
+    opts.add_argument(<span class="str">'--no-sandbox'</span>)
+    driver = webdriver.Chrome(options=opts)  <span class="cm"># Free ChromeDriver</span>
+    driver.get(url)
+    time.sleep(<span class="num">3</span>)
+    <span class="kw">for</span> action <span class="kw">in</span> actions:
+        <span class="kw">if</span> action[<span class="str">'type'</span>] == <span class="str">'click'</span>:
+            driver.find_element(By.CSS_SELECTOR, action[<span class="str">'selector'</span>]).click()
+        <span class="kw">elif</span> action[<span class="str">'type'</span>] == <span class="str">'type'</span>:
+            el = driver.find_element(By.CSS_SELECTOR, action[<span class="str">'selector'</span>])
+            el.clear()
+            el.send_keys(action[<span class="str">'text'</span>])
+        time.sleep(<span class="num">1</span>)
+    <span class="kw">return</span> driver
+
+<span class="cm"># Example: auto-open Groww and navigate to a stock</span>
+<span class="fn">def</span> <span class="fn">open_groww_stock</span>(stock_name):
+    <span class="kw">import</span> webbrowser
+    url = <span class="str">f"https://groww.in/stocks/{stock_name.lower()}"</span>
+    webbrowser.open(url)  <span class="cm"># Opens in default browser, logs in automatically</span>
+    print(<span class="str">f"Opening {stock_name} in Groww..."</span>)</pre>
+  <button class="copy-btn" onclick="copyCode('code-laptop')">Copy code</button>
+</div>
+
+<!-- OFFLINE + PHONE -->
+<div id="panel-offline" class="panel content">
+  <h2>Offline + phone support</h2>
+  <p class="sub">Works without internet. Syncs when back online. Runs as PWA on your phone.</p>
+
+  <div class="grid2" style="margin-bottom:16px;">
+    <div class="card">
+      <h3>Offline architecture</h3>
+      <div class="tool-row"><span>Local storage</span><span style="color:var(--teal)">SQLite (zero cost)</span></div>
+      <div class="tool-row"><span>Task queue</span><span style="color:var(--teal)">Local DB, syncs later</span></div>
+      <div class="tool-row"><span>Cloud sync</span><span style="color:var(--teal)">Supabase free 500MB</span></div>
+      <div class="tool-row"><span>AI offline</span><span style="color:var(--amber)">Ollama (local LLM)</span></div>
+      <div class="tool-row"><span>Phone app</span><span style="color:var(--teal)">PWA — no app store</span></div>
+    </div>
+    <div class="card">
+      <h3>Phone setup (no install)</h3>
+      <div class="step"><div class="step-num">1</div><div class="step-body">Save <code>pwa.html</code> to GitHub Pages</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body">Open URL in Chrome on phone</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body">Tap "Add to Home Screen"</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body">Works like a native app, offline too</div></div>
+    </div>
+  </div>
+
+  <pre id="code-offline"><span class="cm"># sync_agent.py — handles offline/online sync</span>
+<span class="cm"># pip install supabase schedule</span>
+<span class="kw">import</span> sqlite3, json, schedule, time, requests
+<span class="kw">from</span> supabase <span class="kw">import</span> create_client
+
+SUPABASE_URL = os.environ.get(<span class="str">'SUPABASE_URL'</span>)    <span class="cm"># Free at supabase.com</span>
+SUPABASE_KEY = os.environ.get(<span class="str">'SUPABASE_ANON_KEY'</span>)
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+<span class="fn">def</span> <span class="fn">check_online</span>():
+    <span class="kw">try</span>:
+        requests.get(<span class="str">'https://1.1.1.1'</span>, timeout=<span class="num">3</span>)
+        <span class="kw">return</span> <span class="kw">True</span>
+    <span class="kw">except</span>: <span class="kw">return</span> <span class="kw">False</span>
+
+<span class="fn">def</span> <span class="fn">sync_to_cloud</span>():
+    <span class="kw">if not</span> 
+<truncated 7617 bytes>
+
+NOTE: The output was truncated because it was too long. Use a more targeted query or a smaller range to get the information you need.
