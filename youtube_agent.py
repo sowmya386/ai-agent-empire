@@ -2,7 +2,7 @@
 import os
 import sys
 from gtts import gTTS
-from moviepy.editor import AudioFileClip, ColorClip, TextClip, CompositeVideoClip
+from moviepy import AudioFileClip, ColorClip, TextClip, CompositeVideoClip
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from pytrends.request import TrendReq
@@ -35,16 +35,14 @@ def make_video(audio_file, title, output='video.mp4'):
     audio = AudioFileClip(audio_file)
     bg = ColorClip(size=(1920, 1080), color=[15, 15, 30], duration=audio.duration)
     
-    # Standard text clips can sometimes fail on systems without ImageMagick.
-    # We will write a fallback or print instructions.
     try:
-        txt = TextClip(title, fontsize=60, color='white', font='Arial-Bold')
-        txt = txt.set_pos('center').set_duration(audio.duration)
-        video = CompositeVideoClip([bg, txt]).set_audio(audio)
+        txt = TextClip(text=title, font_size=60, color='white', font='arial.ttf')
+        txt = txt.with_position('center').with_duration(audio.duration)
+        video = CompositeVideoClip([bg, txt]).with_audio(audio)
     except Exception as e:
         print(f"TextClip failed (usually needs ImageMagick): {e}")
         print("Falling back to plain color clip with audio.")
-        video = bg.set_audio(audio)
+        video = bg.with_audio(audio)
         
     video.write_videofile(output, fps=24, codec='libx264')
     return output
