@@ -1,4 +1,4 @@
-# stock_agent.py — pip install nsepython yfinance pandas-ta requests
+# stock_agent.py — pip install nsepython yfinance pandas-ta-classic requests
 import sys
 try:
     sys.stdout.reconfigure(encoding='utf-8')
